@@ -1,4 +1,4 @@
-# Unified Launcher
+# Android Unified Launcher
 
 <img src="https://2immerse.eu/wp-content/uploads/2016/04/2-IMM_150x50.png" align="left"/><em>This project was originally developed as part of the <a href="https://2immerse.eu/">2-IMMERSE</a> project, co-funded by the European Commission’s <a hef="http://ec.europa.eu/programmes/horizon2020/">Horizon 2020</a> Research Programme</em>
 
@@ -19,8 +19,7 @@ To build everything, ensure Docker is installed and run:
 
 ```bash
 make LAUNCHER_DEPLOYMENT_BASE_URL=<launcher-webapp-deployment-url>  \
-     CLIENT_DEPLOYMENT_BASE_URL=<client-api-deployment-url> \
-     GIT_PRIVATE_KEY_FILENAME=<private-git-key-filename>
+     CLIENT_DEPLOYMENT_BASE_URL=<client-api-deployment-url>
 ```
 
 See `make info` for more details.
