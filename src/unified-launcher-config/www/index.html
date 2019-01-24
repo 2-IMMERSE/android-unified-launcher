@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8'>
+
+<!--
+	# Copyright 2019 British Telecommunications plc
+	# Copyright 2019 British Broadcasting Corporation
+	# 
+	# Licensed under the Apache License, Version 2.0 (the "License");
+	# you may not use this file except in compliance with the License.
+	# You may obtain a copy of the License at
+	# 
+	#   http://www.apache.org/licenses/LICENSE-2.0
+	# 
+	# Unless required by applicable law or agreed to in writing, software
+	# distributed under the License is distributed on an "AS IS" BASIS,
+	# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	# See the License for the specific language governing permissions and
+	# limitations under the License.
+-->
+
+	<script src="cordova.js"></script>
+
+	<script>
+	(function() {
+		"use strict";
+
+		function notifyPhase(phase) {
+			document.getElementById("phase").innerText = "Init phase: " + phase;
+		}
+
+		function clearPhaseNotification() {
+			document.getElementById("phase").innerText = "";
+		}
+
+		function initPhase0() {
+			notifyPhase(0);
+			var block = document.getElementById("time_warning");
+			var now_span = document.getElementById("time_warning_now");
+			var check = function() {
+				var now = new Date();
+				if (now.getFullYear() < 2000) {
+					block.style.display = "block";
+					now_span.innerText = now.toString();
+					window.setTimeout(check, 500);
+				} else {
+					block.style.display = "none";
+					initPhase1();
+				}
+			};
+			check();
+		}
+
+		function loadJsonFile(fileName, success, fail) {
+			window.resolveLocalFileSystemURL(
+				cordova.file.dataDirectory + fileName,
+				function(fileEntry) {
+					fileEntry.file(function (file) {
+						var reader = new FileReader();
+
+						reader.onloadend = function() {
+							console.log("Successful file read");
+
+							var json = {};
+							try {
+								json = JSON.parse(this.result);
+							} catch(e) {
+								console.log("Failed to parse file: " + e.toString());
+								return fail();
+							}
+
+							success(json);
+						};
+
+						reader.onerror = function(e) {
+							console.log("Failed to read file: " + e.toString());
+							fail();
+						};
+
+					reader.readAsText(file);
+					}, function(e) {
+						console.log("Failed to get file entry: " + e.toString());
+						fail();
+					});
+				},
+				function(e) {
+					console.log('Error resolving file: ' + e.toString());
+					fail();
+				}
+			);
+		}
+
+		function getJson(url, success, fail) {
+			var xhr = new XMLHttpRequest();
+			xhr.open("GET", url, true);
+			xhr.responseType = "json";
+			xhr.onload = function() {
+				success((xhr.status === 200) ? xhr.response : null);
+			};
+			xhr.onerror = function(e) {
+				fail();
+			};
+			try {
+				xhr.send();
+			} catch(e) {
+				console.warn(e.message);
+				fail();
+			}
+			return xhr;
+		}
+
+		function initPhase1() {
+			// notifyPhase(1);
+			clearPhaseNotification();
+
+			var load_fail = document.getElementById("info_load_fail");
+
+			var fail = function() {
+				load_fail.style.display = "block";
+			};
+
+			if (!(window.cordova && window.cordova.file && window.plugins && window.plugins.DocumentContract)) {
+				console.log("Cordova/plugins missing");
+				return fail();
+			}
+
+			var load = function() {
+				window.plugins.DocumentContract.createFile({
+					uri: 'content://eu.immerse2.android.unified.launcher2.public/public/status.json',
+					fileName: 'status.json',
+				},
+				function(fileName) {
+					loadJsonFile(fileName, function(json) {
+						var result = document.getElementById("result");
+						while (result.firstChild) result.remove(result.firstChild);
+						var line = function(k, l) {
+							var div = document.createElement("div");
+							var kdiv = document.createElement("div");
+							kdiv.className = "k";
+							kdiv.textContent = l;
+							var vdiv = document.createElement("div");
+							vdiv.className = "v";
+							vdiv.textContent = json[k];
+							div.appendChild(kdiv);
+							div.appendChild(vdiv);
+							result.appendChild(div);
+						};
+						line("deviceId", "Device ID");
+						line("instanceId", "Instance ID");
+						line("contextId", "Context ID");
+						line("dmAppId", "DMApp ID");
+						line("sessionId", "Session ID");
+
+						document.getElementById("info_load_fail").style.display = "none";
+						document.getElementById("phase").style.display = "none";
+					}, fail);
+				},
+				function(e) {
+					console.log("Failed file get entry when reading status: " + e.toString());
+					// Getting status.json is not an error as such if the 2-IMMERSE companion app has never run before
+					// and created it.
+					fail();
+				});
+			};
+			document.getElementById("refresh").addEventListener("click", load);
+			load();
+
+			// Options loaded from store
+			let loadedCfg = {
+				config: {},
+				opts: {},
+			};
+			var serverEnvSelect = document.getElementById('serverEnv');
+
+			var loadServicePresets = function(servicePresetsUrl) {
+				getJson(servicePresetsUrl, function(servicePresets) {
+					// Populate combo with available presets
+					if(servicePresets !== null) {
+						var optSelected = false;
+						serverEnvSelect.innerHTML = "";
+						Object.keys(servicePresets).forEach(function(key, index) {
+							var optionElem = document.createElement("option");
+							optionElem.value = key;
+							optionElem.textContent = key;
+							if(("deployment" in loadedCfg.opts) && (loadedCfg.opts["deployment"] === key)) {
+								optionElem.setAttribute("selected", "true");
+							}
+							serverEnvSelect.appendChild(optionElem);
+						});
+						alert("Service presets URL loaded successfully.");
+					}
+				}, function() {
+					let msg = "Failed to load '"+servicePresetsUrl+"'.";
+					console.log(msg);
+					alert(msg);
+				});
+			};
+
+			loadJsonFile("public/launchConfig.json", function(json) {
+				loadedCfg = json || {};
+				let servicePresetsUrl = document.getElementById('servicePresetsUrl').value;
+				if("servicePresetsUrl" in loadedCfg.opts) {
+					servicePresetsUrl = loadedCfg.opts["servicePresetsUrl"];
+					document.getElementById('servicePresetsUrl').value = servicePresetsUrl;
+				}
+				loadServicePresets(servicePresetsUrl);
+				const setChecked = function(key) {
+					const elem = document.getElementById(key);
+					if (elem && loadedCfg.opts[key]) elem.checked = true;
+				};
+				setChecked("debug");
+				setChecked("full_net_logging");
+			}, function() {
+				let servicePresetsUrl = document.getElementById('servicePresetsUrl').value;
+				loadServicePresets(servicePresetsUrl);
+			});
+
+			var writeConfig;
+			window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dirEntry) {
+				dirEntry.getDirectory('public', { create: true, exclusive: false }, function (subDirEntry) {
+					var noop = function() {};
+					var index = 0;
+					writeConfig = function(obj, success, fail) {
+						var content = JSON.stringify(obj);
+						var fileName = "launchConfig.json";
+						var tempFileName = fileName + "." + (index++);
+						subDirEntry.getFile(tempFileName, { create: true, exclusive: false }, function(fileEntry) {
+							fileEntry.createWriter(function (fileWriter) {
+								fileWriter.onwriteend = function() {
+									// atomic rename
+									fileEntry.moveTo(subDirEntry, fileName, function() {
+										console.log("Successfully wrote launch config: " + content);
+										success("Successfully wrote launch config");
+									}, function(e) {
+										fail("Failed file rename when writing status: " + e.toString());
+									});
+								};
+
+								fileWriter.onerror = function (e) {
+									subDirEntry.remove(noop, noop);
+									fail("Failed file write when writing status: " + e.toString());
+								};
+
+								fileWriter.write(new Blob([content], { type: 'text/plain' }));
+							});
+						}, function (e) {
+							fail("Failed file get entry when writing status: " + e.toString());
+						});
+					};
+				}, function(e) {
+					console.log("Status writer: getDirectory failed: " + e.toString());
+				});
+			}, function(e) {
+				console.log("Status writer: resolveLocalFileSystemURL failed: " + e.toString());
+			});
+
+			document.getElementById("save").addEventListener("click", function() {
+				const cfg = {
+					config: {
+						inputDocVariations: {}
+					},
+					opts: {},
+				};
+				if(serverEnvSelect.value && serverEnvSelect.value !== "none") {
+					cfg.opts["deployment"] = serverEnvSelect.value;
+					cfg.config.serverEnv = serverEnvSelect.value;
+				}
+
+				let servicePresetsUrl = document.getElementById('servicePresetsUrl').value;
+				cfg.opts["servicePresetsUrl"] = servicePresetsUrl;
+
+				if(document.getElementById('debug').checked) {
+					cfg.opts['debug'] = true;
+					cfg.config.inputDocVariations.debug = true;
+				}
+				if(document.getElementById('full_net_logging').checked) {
+					cfg.opts['full_net_logging'] = true;
+					cfg.config.inputDocVariations.netlogging = "trace";
+				}
+				console.info("New config: " + JSON.stringify(cfg, null, 4));
+				writeConfig(cfg, function(msg) { alert(msg); }, function(msg) { alert(msg); });
+			});
+
+			var RefreshDialog = function() {
+				let servicePresetsUrl = document.getElementById('servicePresetsUrl').value;
+				loadServicePresets(servicePresetsUrl);
+			};
+			document.getElementById('loadPresets').addEventListener("click", RefreshDialog);
+		}
+
+		document.addEventListener("deviceready", initPhase0, false);
+	})();
+	</script>
+
+	<style>
+		.scary_warning {
+			margin: 5px;
+			font-size: 200%;
+			outline: 5px dashed red;
+			box-shadow: 0px 0px 0px 5px yellow;
+			animation: 1s animateBorder step-end infinite;
+			display: none;
+		}
+		@keyframes animateBorder {
+			50% {
+				outline: 5px dashed yellow;
+				box-shadow: 0px 0px 0px 5px red;
+			}
+		}
+
+		.k {
+			display: inline-block;
+			width: 10em;
+		}
+
+		.v {
+			display: inline-block;
+		}
+
+		#time_warning_now {
+			font-weight: bold;
+		}
+
+		.div_p {
+			margin-top: 0.5em;
+			margin-bottom: 0.5em;
+		}
+	</style>
+</head>
+<body>
+	<h2>2-IMMERSE companion launcher config/status app</h2>
+	<br />
+	<div id="time_warning" class="scary_warning">
+		Notice: Current system time is probably incorrect: <span id="time_warning_now"></span>
+	</div>
+	<div id="info_load_fail" class="scary_warning">
+		Failed to load status...
+	</div>
+	<div id="phase"></div>
+	<div id="result"></div>
+	<button id="refresh">Refresh Status</button>
+	<hr />
+	<div class="div_p">
+		<label for="servicePresetsUrl">Service presets URL (JSON)</label>
+		<input id="servicePresetsUrl" type="url" value="&lt:replace me&gt;/unified-launcher/service-presets.json"></input>
+		<button id="loadPresets">Load Presets</button>
+		<label for="serverEnv">Server Environment:</label>
+		<select name="serverEnv" id="serverEnv">
+			<option value="none" selected disabled hidden>Choose here</option>
+		</select>
+	</div>
+	<div class="div_p">
+		<div><label><input id="debug" type="checkbox" />Enable debug</label></div>
+		<div><label><input id="full_net_logging" type="checkbox" />Log all log levels to Kibana</label></div>
+	</div>
+	<button id="save">Save</button>
+</body>
+</html>

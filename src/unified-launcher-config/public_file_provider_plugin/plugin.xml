@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="eu.immerse2.android.unified.launcher2Config.public_file_provider" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Public file provider</name>
+    <platform name="android">
+        <framework src="de.cketti.fileprovider:public-fileprovider:1.0.0" />
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <provider
+                android:name="de.cketti.fileprovider.PublicFileProvider"
+                android:authorities="eu.immerse2.android.unified.launcher2Config.public"
+                android:exported="true">
+                <meta-data
+                    android:name="de.cketti.fileprovider.PUBLIC_FILE_PROVIDER_PATHS"
+                    android:resource="@xml/public_paths" />
+            </provider>
+        </config-file>
+        <resource-file src="public_paths.xml" target="res/xml/public_paths.xml" />
+    </platform>
+</plugin>

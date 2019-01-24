@@ -1,0 +1,40 @@
+{
+  "name": "eu.immerse2.android.unified.launcher2",
+  "version": "0.0.1",
+  "displayName": "2-Immerse Launcher",
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {
+      "cordova-plugin-whitelist": {},
+      "de.fhg.fokus.famium.hbbtv": {},
+      "ionic-plugin-videosettings": {},
+      "de.irt.androidsynckit": {},
+      "cordova-plugin-console": {},
+      "cordova-custom-config": {},
+      "cordova-plugin-android-permissions": {},
+      "cordova-plugin-device": {},
+      "cordova-plugin-document-contract": {},
+      "cordova-plugin-file": {},
+      "eu.immerse2.android.unified.launcher2.public_file_provider": {},
+      "cordova-plugin-fullscreen": {}
+    }
+  },
+  "dependencies": {
+    "cordova-android": "~6.4.0",
+    "cordova-custom-config": "~3.0.14",
+    "cordova-plugin-android-permissions": "~1.0.0",
+    "cordova-plugin-console": "~1.1.0",
+    "cordova-plugin-device": "~2.0.2",
+    "cordova-plugin-document-contract": "~0.4.1",
+    "cordova-plugin-file": "~4.3.3",
+    "cordova-plugin-fullscreen": "^1.2.0",
+    "cordova-plugin-whitelist": "1",
+    "de.fhg.fokus.famium.hbbtv": "file:cordova-plugin-hbbtv",
+    "de.irt.androidsynckit": "file:synckit/android",
+    "eu.immerse2.android.unified.launcher2.public_file_provider": "file:public_file_provider_plugin",
+    "public_file_provider": "file:public_file_provider_plugin",
+    "ionic-plugin-videosettings": "git+https://github.com/lfitzgerald/ionic-plugin-videosettings.git#3a847c0115baddc9b4aa1710e802739eb067a153"
+  }
+}

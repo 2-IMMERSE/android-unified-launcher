@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="eu.immerse2.android.unified.launcher2Config" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>2-Immerse Launcher Config</name>
+    <description>
+        2-Immerse Launcher Configuration App
+    </description>
+    <author href="http://2immerse.eu">
+        2-Immerse
+    </author>
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="ws://*/*" />
+    <allow-intent href="wss://*/*" />
+    <preference name="LoadUrlTimeoutValue" value="-1" />
+    <icon src="res/icon.png" />
+    <engine name="android" spec="~6.4.0" />
+    <plugin name="cordova-plugin-whitelist" spec="1" />
+    <plugin name="cordova-plugin-console" spec="~1.1.0" />
+    <plugin name="cordova-custom-config" spec="~3.0.14" />
+    <plugin name="cordova-plugin-android-permissions" spec="~1.0.0" />
+    <plugin name="cordova-plugin-device" spec="~2.0.2" />
+    <plugin name="cordova-plugin-document-contract" spec="~0.4.1" />
+    <plugin name="cordova-plugin-file" spec="~4.3.3" />
+    <plugin name="eu.immerse2.android.unified.launcher2Config.public_file_provider" spec="file:public_file_provider_plugin" />
+</widget>

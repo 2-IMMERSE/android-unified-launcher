@@ -1,0 +1,32 @@
+{
+  "name": "eu.immerse2.android.unified.launcher2Config",
+  "version": "0.0.1",
+  "displayName": "2-Immerse Launcher Config",
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {
+      "cordova-plugin-whitelist": {},
+      "cordova-plugin-console": {},
+      "cordova-custom-config": {},
+      "cordova-plugin-android-permissions": {},
+      "cordova-plugin-device": {},
+      "cordova-plugin-document-contract": {},
+      "cordova-plugin-file": {},
+      "eu.immerse2.android.unified.launcher2Config.public_file_provider": {}
+    }
+  },
+  "dependencies": {
+    "cordova-android": "~6.4.0",
+    "cordova-custom-config": "~3.0.14",
+    "cordova-plugin-android-permissions": "~1.0.0",
+    "cordova-plugin-console": "~1.1.0",
+    "cordova-plugin-device": "~2.0.2",
+    "cordova-plugin-document-contract": "~0.4.1",
+    "cordova-plugin-file": "~4.3.3",
+    "cordova-plugin-whitelist": "1",
+    "public_file_provider": "file:public_file_provider_plugin",
+    "eu.immerse2.android.unified.launcher2Config.public_file_provider": "file:public_file_provider_plugin"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "public_file_provider",
+  "version": "0.0.1",
+  "cordova": {
+    "id": "eu.immerse2.android.unified.launcher2.public_file_provider",
+    "platforms": [
+      "android"
+    ]
+  }
+}

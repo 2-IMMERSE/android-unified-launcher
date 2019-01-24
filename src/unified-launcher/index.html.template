@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8'>
+
+<!--
+	# Copyright 2019 British Telecommunications plc
+	# Copyright 2019 British Broadcasting Corporation
+	# 
+	# Licensed under the Apache License, Version 2.0 (the "License");
+	# you may not use this file except in compliance with the License.
+	# You may obtain a copy of the License at
+	# 
+	#   http://www.apache.org/licenses/LICENSE-2.0
+	# 
+	# Unless required by applicable law or agreed to in writing, software
+	# distributed under the License is distributed on an "AS IS" BASIS,
+	# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	# See the License for the specific language governing permissions and
+	# limitations under the License.
+-->
+
+	<script src="cordova.js"></script>
+
+	<script>
+	(function() {
+		"use strict";
+
+		const launcherDeploymentBaseUrl = "###LAUNCHER_DEPLOYMENT_BASE_URL###";
+		const clientDeploymentBaseUrl = "###CLIENT_DEPLOYMENT_BASE_URL###";
+
+		// TODO: Would be nicer to have a spinner...
+		function notifyPhase(phase) {
+			document.getElementById("phase").innerText = "Init phase: " + phase;
+		}
+
+		function initPhase0() {
+			notifyPhase(0);
+			var block = document.getElementById("time_warning");
+			var now_span = document.getElementById("time_warning_now");
+			var check = function() {
+				var now = new Date();
+				if (now.getFullYear() < 2000) {
+					block.style.display = "block";
+					now_span.innerText = now.toString();
+					window.setTimeout(check, 500);
+				} else {
+					block.style.display = "none";
+					initPhase1();
+				}
+			};
+			check();
+		}
+
+		function initPhase1() {
+			notifyPhase(1);
+			var load_fail = document.getElementById("script_load_fail");
+			var load = function() {
+				var link = document.createElement('script');
+				link.type = 'text/javascript';
+				link.src = clientDeploymentBaseUrl + "/dist/deps/deps/webcomponentsjs/webcomponents-lite.min.js";
+				link.onload = function(e) {
+					load_fail.style.display = "none";
+					initPhase2();
+				};
+				link.onerror = function(e) {
+					load_fail.style.display = "block";
+					window.setTimeout(load, 5000);
+					document.head.removeChild(link);
+				};
+				document.head.appendChild(link);
+			};
+			load();
+		}
+
+		function initPhase2() {
+			notifyPhase(2);
+			var load_fail = document.getElementById("import_load_fail");
+			var load = function() {
+				var link = document.createElement('link');
+				link.rel = 'import';
+				link.href = clientDeploymentBaseUrl + "/dist/bundle/dist/android-unified-bundle.html";
+				link.onload = function(e) {
+					load_fail.style.display = "none";
+					initPhase3();
+				};
+				link.onerror = function(e) {
+					load_fail.style.display = "block";
+					window.setTimeout(load, 5000);
+					document.head.removeChild(link);
+				};
+				document.head.appendChild(link);
+			};
+			load();
+		}
+
+		var localConfig = {};
+
+		function initPhase3() {
+			notifyPhase(3);
+			var DMAppClientLib = require('DMAppClientLib');
+			var waitable = DMAppClientLib.waitable();
+			waitable.finally(initPhase4);
+			window.plugins.DocumentContract.createFile({
+				uri: 'content://eu.immerse2.android.unified.launcher2Config.public/public/launchConfig.json',
+				fileName: 'launchConfig.json',
+			},
+			function(fileName) {
+				window.resolveLocalFileSystemURL(
+					cordova.file.dataDirectory + fileName,
+					function(fileEntry) {
+						fileEntry.file(function (file) {
+							var reader = new FileReader();
+
+							reader.onloadend = function() {
+								console.log("Successful launchConfig.json file read");
+
+								try {
+									var json = JSON.parse(this.result);
+									if (json && typeof json === "object" && json.config && typeof json.config === "object") localConfig = json.config;
+								} catch(e) {
+									console.log("Failed to parse file: " + e.toString());
+									waitable.abort();
+								}
+								console.log("launchConfig.json contents: " + JSON.stringify(localConfig, null, 4));
+								waitable.signal();
+							};
+
+							reader.onerror = function(e) {
+								console.log("Failed to read file: " + e.toString());
+								waitable.abort();
+							};
+
+							reader.readAsText(file);
+
+						}, function(e) {
+							console.log("Failed to get file entry: " + e.toString());
+							waitable.abort();
+						});
+					},
+					function(e) {
+						console.log('Error resolving file: ' + e.toString());
+						waitable.abort();
+					}
+				);
+			},
+			function(e) {
+				console.log("Failed file get entry when reading status: " + e.toString());
+				waitable.abort();
+			});
+		}
+
+		function initPhase4() {
+			notifyPhase(4);
+			var DMAppClientLib = require('DMAppClientLib');
+
+			var load_fail = document.getElementById("dmapp_load_fail");
+			var $ = DMAppClientLib.deps.jquery;
+			var nodes = $(".scary_warning").add(".init").add("#phase");
+			var load = function() {
+				var conf = {
+					serverEnv: "test-nogateway",
+					companionLauncherUrl: launcherDeploymentBaseUrl + "/www/companion-launcher.html",
+					servicePresetsUrl: launcherDeploymentBaseUrl + "/service-presets.json",
+					epgUrl: launcherDeploymentBaseUrl + "/epg/epg.json"
+				};
+				$.extend(true, conf, localConfig);
+				if (conf.inputDocOverlay) conf.inputDocOverlay = JSON.stringify(conf.inputDocOverlay);
+				if (conf.inputDocVariations) conf.inputDocVariations = JSON.stringify(conf.inputDocVariations);
+				/*if (conf.auxiliaryLaunchData) {
+					if (conf.auxiliaryLaunchData.inputDocOverlay) conf.auxiliaryLaunchData.inputDocOverlay = JSON.stringify(conf.auxiliaryLaunchData.inputDocOverlay);
+					if (conf.auxiliaryLaunchData.inputDocVariations) conf.auxiliaryLaunchData.inputDocVariations = JSON.stringify(conf.auxiliaryLaunchData.inputDocVariations);
+					conf.auxiliaryLaunchData = JSON.stringify(conf.auxiliaryLaunchData);
+				}*/
+				window.immerse2_companion_launcher_server_config = conf;
+				DMAppClientLib.CustomElementUtil.loadAndConcatHtmlImport(conf.companionLauncherUrl, new DMAppClientLib.Logger(), { name: "Launcher" }).then(function() {
+					nodes.remove();
+				}).catch(function() {
+					load_fail.style.display = "block";
+					window.setTimeout(load, 5000);
+				});
+			};
+			if (window.cordova && window.cordova.file) {
+				window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dirEntry) {
+					dirEntry.getDirectory('public', { create: true, exclusive: false }, function (subDirEntry) {
+						var noop = function() {};
+						var index = 0;
+						var writeStatus = function(obj) {
+							var content;
+							try {
+								content = JSON.stringify(obj);
+							} catch (e) {
+								console.log("Failed to stringify object when writing status: " + e.toString());
+								return;
+							}
+							var fileName = "status.json";
+							var tempFileName = fileName + "." + (index++);
+							subDirEntry.getFile(tempFileName, { create: true, exclusive: false }, function(fileEntry) {
+								fileEntry.createWriter(function (fileWriter) {
+									fileWriter.onwriteend = function() {
+										// atomic rename
+										fileEntry.moveTo(subDirEntry, fileName, function() {
+											console.log("Successfully wrote status object: " + content);
+										}, function(e) {
+											console.log("Failed file rename when writing status: " + e.toString());
+										});
+									};
+
+									fileWriter.onerror = function (e) {
+										console.log("Failed file write when writing status: " + e.toString());
+										subDirEntry.remove(noop, noop);
+									};
+
+									fileWriter.write(new Blob([content], { type: 'text/plain' }));
+								});
+							}, function (e) {
+								console.log("Failed file get entry when writing status: " + e.toString());
+							});
+						};
+						DMAppClientLib.DMAppController._debugConstructorHooks.push(function(controller, options) {
+							controller.initedWaitable.then(function() {
+								if (controller.singleInstance) {
+									var statusChange = function() {
+										writeStatus({
+											deviceId: controller.getDeviceId(),
+											instanceId: controller.instanceId,
+											contextId: controller.layout.contextId,
+											dmAppId: controller.layout.dmAppId,
+											sessionId: controller.sessionId,
+										});
+									};
+									controller.layout.on("dmAppChange", statusChange);
+									controller.layout.on("contextChange", statusChange);
+									statusChange();
+								}
+							});
+						});
+						load();
+					}, function(e) {
+						console.log("Status writer: getDirectory failed: " + e.toString());
+						load();
+					});
+				}, function(e) {
+					console.log("Status writer: resolveLocalFileSystemURL failed: " + e.toString());
+					load();
+				});
+			} else {
+				load();
+			}
+		}
+
+		window.addEventListener("load", initPhase0);
+	})();
+	</script>
+
+	<style class="init">
+		.scary_warning {
+			margin: 5px;
+			font-size: 200%;
+			outline: 5px dashed red;
+			box-shadow: 0px 0px 0px 5px yellow;
+			animation: 1s animateBorder step-end infinite;
+			display: none;
+		}
+		@keyframes animateBorder {
+			50% {
+				outline: 5px dashed yellow;
+				box-shadow: 0px 0px 0px 5px red;
+			}
+		}
+
+		#time_warning_now {
+			font-weight: bold;
+		}
+	</style>
+</head>
+<body>
+	<div id="time_warning" class="scary_warning">
+		Notice: Current system time is probably incorrect: <span id="time_warning_now"></span>
+	</div>
+	<div id="script_load_fail" class="scary_warning">
+		Failed to load script, trying again...
+	</div>
+	<div id="import_load_fail" class="scary_warning">
+		Failed to load HTML import, trying again...
+	</div>
+	<div id="dmapp_load_fail" class="scary_warning">
+		Failed to load DMApp page, trying again...
+	</div>
+	<div id="phase"></div>
+</body>
+</html>
