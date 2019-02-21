@@ -27,8 +27,8 @@ default: build
 #pre-build: synckit $(shell [ -e ".config.xml.prev" -a "`git show @:./config.xml`" != "`cat .config.xml.prev 2> /dev/null`" ] && echo "cordova-clean")
 #	git show @:./config.xml > .config.xml.prev
 pre-build: synckit cordova-plugin-hbbtv
-	git config --global user.email "you@example.com"
-	git config --global user.name "Your Name"
+	git config user.email > /dev/null || git config --local user.email "you@example.com"
+	git config user.name > /dev/null || git config --local user.name "Your Name"
 	git -C synckit checkout -q -f $(SYNCKIT_COMMIT)
 	[ "`git -C cordova-plugin-hbbtv rev-parse @^{tree}`" = "1818f8a5b409577780aff2eb911229aa34d7e3e6" ] || { git -C cordova-plugin-hbbtv checkout -q -f $(HBBTV_ORIG_COMMIT) ; git -C cordova-plugin-hbbtv am ../cordova-plugin-hbbtv.am ; }
 	cordova prepare --no-insight
