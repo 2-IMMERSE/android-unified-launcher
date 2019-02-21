@@ -20,3 +20,4 @@ plugins
 synckit
 package-lock.json
 cordova-plugin-hbbtv
+www/
