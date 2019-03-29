@@ -159,7 +159,7 @@
 			var nodes = $(".scary_warning").add(".init").add("#phase");
 			var load = function() {
 				var conf = {
-					serverEnv: "test-nogateway",
+					serverEnv: "production",
 					companionLauncherUrl: launcherDeploymentBaseUrl + "/www/companion-launcher.html",
 					servicePresetsUrl: launcherDeploymentBaseUrl + "/service-presets.json",
 					epgUrl: launcherDeploymentBaseUrl + "/epg/epg.json"
