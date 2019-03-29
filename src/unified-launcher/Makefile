@@ -16,16 +16,12 @@
 INDEX_HTML=www/index.html
 INDEX_HTML_TEMPLATE=index.html.template
 SYNCKIT_COMMIT=4da11f417e2bdb2ade240a471931677a844856ea
-#SYNCKIT_COMMIT=db5a81cc1aa53fa9b37097f0c237dfdf1d02ad00
 HBBTV_ORIG_COMMIT=64e86762aa5427cb9adbff744902197e3e260a55
 
 .PHONY: build run deploy pre-build cordova-clean clean default
 
 default: build
 
-# TODO: Enable these two lines once this code has been added to a repository
-#pre-build: synckit $(shell [ -e ".config.xml.prev" -a "`git show @:./config.xml`" != "`cat .config.xml.prev 2> /dev/null`" ] && echo "cordova-clean")
-#	git show @:./config.xml > .config.xml.prev
 pre-build: synckit cordova-plugin-hbbtv
 	git config user.email > /dev/null || git config --local user.email "you@example.com"
 	git config user.name > /dev/null || git config --local user.name "Your Name"
@@ -36,7 +32,6 @@ pre-build: synckit cordova-plugin-hbbtv
 
 synckit:
 	git clone -n https://github.com/2-IMMERSE/cordova-synckit-android.git synckit
-#	git clone -n git@gitlab-ext.irt.de:2-immerse/synckit.git synckit
 
 cordova-plugin-hbbtv:
 	git clone -n https://github.com/fraunhoferfokus/cordova-plugin-hbbtv.git cordova-plugin-hbbtv
